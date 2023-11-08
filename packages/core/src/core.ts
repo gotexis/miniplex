@@ -1,6 +1,7 @@
 import { Bucket } from "@miniplex/bucket"
 import { id } from "@hmans/id"
 export * from "@miniplex/bucket"
+import { isMainThread } from "worker_threads"
 
 export type Predicate<E, D extends E> =
   | ((v: E) => v is D)
@@ -271,7 +272,8 @@ export class World<E extends {} = any>
    * @param entity The entity to get the ID for.
    * @returns An ID for the entity, or undefined if the entity is not in the world.
    */
-  id(entity: E) {
+  id(entity: E, specifyId?: number) {
+    if (!isMainThread && !specifyId) throw new Error("worker repo must have id")
     /* We only ever want to generate IDs for entities that are actually in the world. */
     if (!this.has(entity)) return undefined
 
@@ -282,7 +284,10 @@ export class World<E extends {} = any>
       this.idToEntity.set(id, entity)
     }
 
-    return this.entityToId.get(entity)!
+    const getId = this.entityToId.get(entity)
+    if (specifyId && specifyId !== getId) throw new Error("Id not match")
+
+    return getId!
   }
 
   /**
