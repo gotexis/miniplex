@@ -1,7 +1,6 @@
 import { Bucket } from "@miniplex/bucket"
 import { id } from "@hmans/id"
 export * from "@miniplex/bucket"
-import { isMainThread } from "worker_threads"
 
 export type Predicate<E, D extends E> =
   | ((v: E) => v is D)
@@ -65,8 +64,15 @@ export class World<E extends {} = any>
   extends Bucket<E>
   implements IQueryableBucket<E>
 {
-  constructor(entities: E[] = []) {
+
+  options: { isMainThread?: boolean } = {
+    isMainThread: true
+  }
+
+  constructor(entities: E[] = [], options?: { isMainThread?: boolean }) {
     super(entities)
+
+    if (options) this.options = options
 
     /* When entities are added, reindex them immediately */
     this.onEntityAdded.subscribe((entity) => {
@@ -273,7 +279,7 @@ export class World<E extends {} = any>
    * @returns An ID for the entity, or undefined if the entity is not in the world.
    */
   id(entity: E, specifyId?: number) {
-    if (!isMainThread && !specifyId) throw new Error("worker repo must have id")
+    if (!this.options.isMainThread && !specifyId) throw new Error("worker repo must have id")
     /* We only ever want to generate IDs for entities that are actually in the world. */
     if (!this.has(entity)) return undefined
 
