@@ -84,10 +84,10 @@ export class World<E extends {} = any>
     this.onEntityRemoved.subscribe((entity) => {
       this.queries.forEach((query) => query.remove(entity))
 
-      if (this.entityToId.has(entity)) {
-        const id = this.entityToId.get(entity)!
-        this.idToEntity.delete(id)
-        this.entityToId.delete(entity)
+      if (this._entityToId.has(entity)) {
+        const id = this._entityToId.get(entity)!
+        this._idToEntity.delete(id)
+        this._entityToId.delete(entity)
       }
     })
   }
@@ -267,9 +267,12 @@ export class World<E extends {} = any>
 
   /* IDs */
 
-  private entityToId = new Map<E, number>()
-  private idToEntity = new Map<number, E>()
-  private nextId = 0
+  private _entityToId = new Map<E, number>()
+  private _idToEntity = new Map<number, E>()
+  private _nextId = 0
+  get entityToId() { return this._entityToId }
+  get idToEntity() { return this._idToEntity }
+  get nextId() { return this._nextId }
 
   /**
    * Generate and return a numerical identifier for the given entity. The ID can later
@@ -284,13 +287,13 @@ export class World<E extends {} = any>
     if (!this.has(entity)) return undefined
 
     /* Lazily generate an ID. */
-    if (!this.entityToId.has(entity)) {
-      const id = this.nextId++
-      this.entityToId.set(entity, id)
-      this.idToEntity.set(id, entity)
+    if (!this._entityToId.has(entity)) {
+      const id = this._nextId++
+      this._entityToId.set(entity, id)
+      this._idToEntity.set(id, entity)
     }
 
-    const getId = this.entityToId.get(entity)
+    const getId = this._entityToId.get(entity)
     if (specifyId && specifyId !== getId) throw new Error("Id not match")
 
     return getId!
@@ -304,7 +307,7 @@ export class World<E extends {} = any>
    * @returns The entity with the given ID, or undefined if no such entity exists.
    */
   entity(id: number) {
-    return this.idToEntity.get(id)
+    return this._idToEntity.get(id)
   }
 }
 
